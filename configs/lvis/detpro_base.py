@@ -1,4 +1,4 @@
-_base_ = ['./mask_rcnn_r50_fpn_sample1e-3_mstrain_1x_lvis_v1_pretrain.py']
+_base_ = ['./mask_rcnn_r50_fpn_sample1e-3_mstrain_1x_coco_pretrain.py']
 
 optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.000025)
 evaluation = dict(interval=4,metric=['bbox', 'segm'])

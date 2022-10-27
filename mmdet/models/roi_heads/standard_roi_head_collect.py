@@ -444,6 +444,7 @@ class StandardRoIHeadCol(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
 
             proposal15 = self.boxto15(proposal)
             save_path = os.path.join('./testbed/', img_metas[i]['ori_filename'].split('.')[0] + "_crop")
+
             if len(proposal)>0:
                 # feats = self.clip_image_forward((img_metas[i],), proposal,(len(proposal),))
                 # feats15 = self.clip_image_forward((img_metas[i],), proposal15,(len(proposal),))

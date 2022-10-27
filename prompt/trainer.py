@@ -110,12 +110,12 @@ def softCrossEntropy(logit, target):
     return torch.sum(log_likelihood * target)
 
 
-def train_epoch(model, optimizer, ds, freq = None, mode = 'hinge'):
+def train_epoch(model, optimizer, ds, freq = None, mode = 'hinge', num_classes=866):
     print("train mode :", mode)
     with torch.no_grad():
         emb = model.get_embedding()
         print("embbeding shape :", emb.shape)
-    
+
     acc1, acc5 = 0, 0
     idb = 0
     time_s = time.time()
@@ -125,7 +125,7 @@ def train_epoch(model, optimizer, ds, freq = None, mode = 'hinge'):
             if idb % 100 == 0:
                 print(idb, '/', len(ds), end='  ')
 
-            emb = model.get_embedding()[:867]
+            emb = model.get_embedding()[:num_classes + 1]
             emb = emb / emb.norm(dim = -1, keepdim = True)
             # emb = torch.cat([embr[:866] / embr[:866].norm(dim = -1, keepdim = True), embr[-1:]])
             # sim = emb @ emb.T - torch.eye(emb.shape[0]).cuda()
@@ -146,32 +146,32 @@ def train_epoch(model, optimizer, ds, freq = None, mode = 'hinge'):
             
             weight = 1 / torch.Tensor(freq).cuda()
             if mode == 'hinge': # hinge loss
-                res = res[:,:866]
-                loss = F.cross_entropy(res[label.cuda()!=866], label.cuda()[label.cuda()!=866], weight[:866], reduction = "sum")
+                res = res[:,:num_classes]
+                loss = F.cross_entropy(res[label.cuda()!=num_classes], label.cuda()[label.cuda()!=num_classes], weight[:num_classes], reduction = "sum")
 
                 logit = F.softmax(res, dim = -1)
-                bg_loss = (logit - (1/866)).maximum(torch.tensor(0).cuda()).sum(dim = -1)
-                bg_loss = bg_loss[label.cuda()==866].sum() * weight[866]
+                bg_loss = (logit - (1/num_classes)).maximum(torch.tensor(0).cuda()).sum(dim = -1)
+                bg_loss = bg_loss[label.cuda()==num_classes].sum() * weight[num_classes]
                 loss += bg_loss
                 loss /= len(label)
                 # loss /= weight[label].sum()
             
             if mode == 'mean': # mean loss
-                res = res[:,:866]
+                res = res[:,:num_classes]
                 res = torch.cat([res, res.mean(dim=-1, keepdim=True)], dim = -1)
                 loss = F.cross_entropy(res, label.cuda(), weight)
 
             if mode == 'meanbg': # mean loss only on bg
-                res = res[:,:866]
-                fg = label.cuda() < 866
-                loss = F.cross_entropy(res[fg], label.cuda()[fg], weight[:866], reduction="sum")
+                res = res[:,:num_classes]
+                fg = label.cuda() < num_classes
+                loss = F.cross_entropy(res[fg], label.cuda()[fg], weight[:num_classes], reduction="sum")
                 res = torch.cat([res, res.mean(dim=-1, keepdim=True)], dim = -1)
-                bg = label.cuda() == 866
+                bg = label.cuda() == num_classes
                 loss_bg = F.cross_entropy(res[bg], label.cuda()[bg], weight, reduction="sum")
                 loss = (loss + loss_bg) / len(label)
 
             if mode == 'max': # max loss
-                res = res[:,:866]
+                res = res[:,:num_classes]
                 alpha = 1.
                 res = torch.cat([res, 1-alpha*res.max(dim=-1,keepdim=True)[0]], dim = -1)
                 res = F.softmax(res, dim=-1)
@@ -184,18 +184,18 @@ def train_epoch(model, optimizer, ds, freq = None, mode = 'hinge'):
                 # print(weight)
                 # print(loss2/loss)
             if mode == 'fg_only': # learn a bg embedding
-                loss = F.cross_entropy(res, label.cuda(), weight[:866])
+                loss = F.cross_entropy(res, label.cuda(), weight[:num_classes])
                 # loss /= weight[label].sum()
             
             if mode == 'soft': # soft label with 1/C
                 # soft_label = softLabel(label.cuda(), iou.cuda())
-                res = res[:,:866]
-                fg = label.cuda() < 866
-                loss_fg = F.cross_entropy(res[fg], label.cuda()[fg], weight[:866], reduction="sum")
+                res = res[:,:num_classes]
+                fg = label.cuda() < num_classes
+                loss_fg = F.cross_entropy(res[fg], label.cuda()[fg], weight[:num_classes], reduction="sum")
                 
-                bg = label.cuda() == 866
-                soft_label = res.new_ones(res.shape).cuda() / 866
-                loss_bg = softCrossEntropy(res[bg], soft_label[bg]) * weight[866]
+                bg = label.cuda() == num_classes
+                soft_label = res.new_ones(res.shape).cuda() / num_classes
+                loss_bg = softCrossEntropy(res[bg], soft_label[bg]) * weight[num_classes]
                 # loss_bg = F.cross_entropy(res[bg], label.cuda()[bg], weight, reduction="sum")
                 loss = (loss_fg + loss_bg) / weight.cuda()[label.cuda()].sum()
                 # loss *= weight[0]
@@ -203,7 +203,7 @@ def train_epoch(model, optimizer, ds, freq = None, mode = 'hinge'):
                 # loss = (coef * loss).mean()
             
             if idb % 100 == 0:
-                print("loss =", loss, f"  time={time.time()-time_s}", end='\r')
+                print("loss =", loss, f"  time={time.time()-time_s}")
                 time_s=time.time()
             model.zero_grad()
             

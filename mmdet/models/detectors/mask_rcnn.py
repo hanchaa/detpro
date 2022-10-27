@@ -1,5 +1,6 @@
 from ..builder import DETECTORS
 from .two_stage import TwoStageDetector
+import torch
 
 
 @DETECTORS.register_module()
@@ -65,22 +66,37 @@ class MaskRCNN(TwoStageDetector):
 
         losses = dict()
 
-        # RPN forward and loss
-        if self.with_rpn:
-            proposal_cfg = self.train_cfg.get('rpn_proposal',
-                                              self.test_cfg.rpn)
-            rpn_losses, proposal_list = self.rpn_head.forward_train(
-                x,
-                img_metas,
-                gt_bboxes,
-                gt_labels=None,
-                gt_bboxes_ignore=gt_bboxes_ignore,
-                proposal_cfg=proposal_cfg)
-            losses.update(rpn_losses)
-        else:
-            proposal_list = proposals
+        proposals = []
+        for meta in img_metas:
+            filename = "data/coco/proposals/" + meta["filename"].split("/", 2)[-1].split(".")[0] + ".pth"
+            proposal = torch.load(filename, map_location=img.device)
 
-        roi_losses = self.roi_head.forward_train(x, img, img_no_normalize, img_metas, proposal_list,proposals,
+            h, w, _ = meta["img_shape"]
+            proposal[:, 0] *= w
+            proposal[:, 1] *= h
+            proposal[:, 2] *= w
+            proposal[:, 3] *= h
+
+            proposals.append(proposal)
+
+        # # RPN forward and loss
+        # if self.with_rpn:
+        #     proposal_cfg = self.train_cfg.get('rpn_proposal',
+        #                                       self.test_cfg.rpn)
+        #     rpn_losses, proposal_list = self.rpn_head.forward_train(
+        #         x,
+        #         img_metas,
+        #         gt_bboxes,
+        #         gt_labels=None,
+        #         gt_bboxes_ignore=gt_bboxes_ignore,
+        #         proposal_cfg=proposal_cfg)
+        #     losses.update(rpn_losses)
+        # else:
+        #     proposal_list = proposals
+
+        proposal_list = proposals
+
+        roi_losses = self.roi_head.forward_train(x, img, img_no_normalize, img_metas, proposal_list, proposals,
                                                  gt_bboxes, gt_labels,
                                                  gt_bboxes_ignore, gt_masks,
                                                  **kwargs)

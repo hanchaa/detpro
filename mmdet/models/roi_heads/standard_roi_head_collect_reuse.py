@@ -93,7 +93,10 @@ class StandardRoIHeadColReuse(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
                 for param in child.parameters():
                     param.requires_grad = False
         else:
-            self.zipfile = ZipBackend('data/lvis_clip_image_embedding.zip')
+            if self.num_classes == 80:
+                self.zipfile = ZipBackend("data/coco_clip_image_embedding.zip")
+            else:
+                self.zipfile = ZipBackend('data/lvis_clip_image_embedding.zip')
         self.text_features_for_classes = []
         self.iters = 0
         self.ensemble = bbox_head.ensemble
@@ -421,7 +424,10 @@ class StandardRoIHeadColReuse(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
         # ------------------------------------------------------------
         bbox_results, region_embeddings = self._bbox_forward(x, rois)
         for i in range(len(img_metas)):
-            save_path = os.path.join('lvis_clip_image_embedding.zip/data/lvis_clip_image_embedding', img_metas[i]['ori_filename'].split('.')[0] + '.pth')
+            if self.num_classes == 80:
+                save_path = os.path.join("coco_clip_image_embedding.zip/data/coco_clip_image_embedding_ori_forward", img_metas[i]["ori_filename"].split(".")[0] + ".pth")
+            else:
+                save_path = os.path.join('lvis_clip_image_embedding.zip/data/lvis_clip_image_embedding', img_metas[i]['ori_filename'].split('.')[0] + '.pth')
             f = self.zipfile.get(save_path)
             stream = io.BytesIO(f)
             clip_image_features_ensemble_proposal = torch.load(stream).to(self.device)

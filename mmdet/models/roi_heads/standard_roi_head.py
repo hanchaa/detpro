@@ -130,7 +130,7 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
         if prompt_path is not None:
             save_path = prompt_path
         else:
-            save_path = 'lvis_text_embedding.pt'
+            save_path = f'{dataset}_text_embedding.pt'
         print('load:',save_path)
         time_start = time.time()
         if osp.exists(save_path):

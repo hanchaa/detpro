@@ -57,7 +57,8 @@ class CocoDataset(CustomDataset):
         self.coco = COCO(ann_file)
         # print(self.cat2label)
         self.img_ids = self.coco.get_img_ids()
-        self.ignore_ids_train = [4, 5, 9, 10, 11, 12, 15, 16, 19, 20, 25, 27, 31, 32, 34, 35, 36, 38, 40, 41, 43, 52, 55, 57, 58, 60, 66, 67, 71, 76, 77, 78]
+        # self.ignore_ids_train = [4, 5, 9, 10, 11, 12, 15, 16, 19, 20, 25, 27, 31, 32, 34, 35, 36, 38, 40, 41, 43, 52, 55, 57, 58, 60, 66, 67, 71, 76, 77, 78]
+        self.ignore_ids_train = [9, 10, 11, 12, 32, 34, 35, 38, 40, 52, 58, 60, 67, 77, 78]
         self.ignore_ids_test = [9, 10, 11, 12, 32, 34, 35, 38, 40, 52, 58, 60, 67, 77, 78]
         CLASSES_for_evaluate = []
         if self.test_mode:

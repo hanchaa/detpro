@@ -1,4 +1,4 @@
-_base_ = ['./mask_rcnn_r50_fpn_sample1e-3_mstrain_1x_lvis_v1_pretrain.py']
+_base_ = ['./mask_rcnn_r50_fpn_sample1e-3_mstrain_1x_coco_pretrain.py']
 lr_config = dict(step=[8,10,11])
 total_epochs = 12
 optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.000025)
